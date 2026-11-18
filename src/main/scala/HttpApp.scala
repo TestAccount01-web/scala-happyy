@@ -19,6 +19,10 @@ object HttpApp {
       calc(exchange)(Calc.multiply)
     })
 
+    server.createContext("/subtract", handle { exchange =>
+      calc(exchange)(Calc.subtract)
+    })
+
     server.setExecutor(null)
     server.start()
     server

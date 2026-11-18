@@ -42,6 +42,12 @@ class HttpAppSpec extends AnyFunSuite with BeforeAndAfterAll {
     assert(res.body() == "12")
   }
 
+  test("subtract endpoint returns the difference of a and b") {
+    val res = get("/subtract?a=7&b=3")
+    assert(res.statusCode() == 200)
+    assert(res.body() == "4")
+  }
+
   test("add endpoint rejects missing parameters with 400") {
     assert(get("/add?a=2").statusCode() == 400)
   }
