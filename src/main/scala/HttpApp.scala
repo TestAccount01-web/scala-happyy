@@ -27,6 +27,10 @@ object HttpApp {
       calc(exchange)(Calc.divide)
     })
 
+    server.createContext("/percent", handle { exchange =>
+      calc(exchange)(Calc.percent)
+    })
+
     server.setExecutor(null)
     server.start()
     server
