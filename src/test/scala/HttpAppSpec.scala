@@ -48,6 +48,16 @@ class HttpAppSpec extends AnyFunSuite with BeforeAndAfterAll {
     assert(res.body() == "4")
   }
 
+  test("divide endpoint returns the quotient of a and b") {
+    val res = get("/divide?a=12&b=4")
+    assert(res.statusCode() == 200)
+    assert(res.body() == "3")
+  }
+
+  test("divide endpoint returns 500 when dividing by zero") {
+    assert(get("/divide?a=12&b=0").statusCode() == 500)
+  }
+
   test("add endpoint rejects missing parameters with 400") {
     assert(get("/add?a=2").statusCode() == 400)
   }

@@ -23,6 +23,10 @@ object HttpApp {
       calc(exchange)(Calc.subtract)
     })
 
+    server.createContext("/divide", handle { exchange =>
+      calc(exchange)(Calc.divide)
+    })
+
     server.setExecutor(null)
     server.start()
     server
