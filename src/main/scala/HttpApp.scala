@@ -31,6 +31,14 @@ object HttpApp {
       calc(exchange)(Calc.percent)
     })
 
+    server.createContext("/account/reactivate", handle { exchange =>
+      reactivate(exchange)
+    })
+
+    server.createContext("/account/status", handle { exchange =>
+      accountStatus(exchange)
+    })
+
     server.setExecutor(null)
     server.start()
     server
@@ -63,6 +71,42 @@ object HttpApp {
         case _ => respond(exchange, 400, "Query parameters 'a' and 'b' are required")
       }
     }
+  }
+
+  private def reactivate(exchange: HttpExchange): Unit = {
+    if (exchange.getRequestMethod != "POST") {
+      respond(exchange, 405, "Method Not Allowed")
+    } else {
+      val params = queryParams(readBody(exchange))
+      (params.get("account"), params.get("password"), params.get("otp")) match {
+        case (Some(account), Some(password), Some(otp)) =>
+          AccountReactivation.reactivate(account, password, otp) match {
+            case Right(message) => respond(exchange, 200, message)
+            case Left("Unknown account") => respond(exchange, 404, "Unknown account")
+            case Left(error) => respond(exchange, 401, error)
+          }
+        case _ =>
+          respond(exchange, 400, "Body parameters 'account', 'password' and 'otp' are required")
+      }
+    }
+  }
+
+  private def accountStatus(exchange: HttpExchange): Unit = {
+    if (exchange.getRequestMethod != "GET") {
+      respond(exchange, 405, "Method Not Allowed")
+    } else {
+      val params = queryParams(exchange.getRequestURI.getRawQuery)
+      params.get("account") match {
+        case Some(account) => respond(exchange, 200, if (AccountReactivation.isActive(account)) "active" else "inactive")
+        case None => respond(exchange, 400, "Query parameter 'account' is required")
+      }
+    }
+  }
+
+  private def readBody(exchange: HttpExchange): String = {
+    val in = exchange.getRequestBody
+    try new String(in.readAllBytes(), StandardCharsets.UTF_8)
+    finally in.close()
   }
 
   private def queryParams(raw: String): Map[String, String] =

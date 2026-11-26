@@ -24,6 +24,16 @@ class HttpAppSpec extends AnyFunSuite with BeforeAndAfterAll {
       HttpResponse.BodyHandlers.ofString()
     )
 
+  private def post(path: String, body: String): HttpResponse[String] =
+    client.send(
+      HttpRequest
+        .newBuilder(URI.create(baseUrl + path))
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .POST(HttpRequest.BodyPublishers.ofString(body))
+        .build(),
+      HttpResponse.BodyHandlers.ofString()
+    )
+
   test("health endpoint returns ok") {
     val res = get("/health")
     assert(res.statusCode() == 200)
@@ -74,5 +84,44 @@ class HttpAppSpec extends AnyFunSuite with BeforeAndAfterAll {
 
   test("unknown path returns 404") {
     assert(get("/nope").statusCode() == 404)
+  }
+
+  test("reactivate endpoint activates an account with password and OTP") {
+    val res = post("/account/reactivate", "account=1002&password=hunter2&otp=654321")
+    assert(res.statusCode() == 200)
+    assert(res.body() == "Account 1002 is active")
+  }
+
+  test("reactivate endpoint rejects an incorrect password with 401") {
+    val res = post("/account/reactivate", "account=1001&password=wrong&otp=123456")
+    assert(res.statusCode() == 401)
+    assert(res.body() == "Incorrect password")
+  }
+
+  test("reactivate endpoint rejects an incorrect OTP with 401") {
+    val res = post("/account/reactivate", "account=1001&password=secret123&otp=000000")
+    assert(res.statusCode() == 401)
+    assert(res.body() == "Incorrect OTP")
+  }
+
+  test("reactivate endpoint returns 404 for an unknown account") {
+    val res = post("/account/reactivate", "account=9999&password=secret123&otp=123456")
+    assert(res.statusCode() == 404)
+  }
+
+  test("reactivate endpoint rejects missing body parameters with 400") {
+    val res = post("/account/reactivate", "account=1001&password=secret123")
+    assert(res.statusCode() == 400)
+  }
+
+  test("reactivate endpoint rejects non-POST requests with 405") {
+    assert(get("/account/reactivate").statusCode() == 405)
+  }
+
+  test("account status reports whether an account is active") {
+    post("/account/reactivate", "account=1002&password=hunter2&otp=654321")
+    val res = get("/account/status?account=1002")
+    assert(res.statusCode() == 200)
+    assert(res.body() == "active")
   }
 }
