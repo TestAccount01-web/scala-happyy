@@ -31,6 +31,11 @@ object HttpApp {
       calc(exchange)(Calc.percent)
     })
 
+    server.createContext("/dashboard", handle { exchange =>
+      if (exchange.getRequestMethod != "GET") respond(exchange, 405, "Method Not Allowed")
+      else respondHtml(exchange, 200, dashboardPage)
+    })
+
     server.setExecutor(null)
     server.start()
     server
@@ -93,4 +98,29 @@ object HttpApp {
     try out.write(bytes)
     finally out.close()
   }
+
+  private def respondHtml(exchange: HttpExchange, status: Int, body: String): Unit = {
+    val bytes = body.getBytes(StandardCharsets.UTF_8)
+    exchange.getResponseHeaders.add("Content-Type", "text/html; charset=utf-8")
+    exchange.sendResponseHeaders(status, bytes.length.toLong)
+    val out = exchange.getResponseBody
+    try out.write(bytes)
+    finally out.close()
+  }
+
+  private val dashboardPage: String =
+    """<!DOCTYPE html>
+      |<html lang="en">
+      |<head>
+      |<meta charset="utf-8">
+      |<meta name="viewport" content="width=device-width, initial-scale=1">
+      |<title>Dashboard</title>
+      |</head>
+      |<body>
+      |<header>
+      |<h1>Dashboard</h1>
+      |</header>
+      |</body>
+      |</html>
+      |""".stripMargin
 }

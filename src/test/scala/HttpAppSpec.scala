@@ -72,6 +72,13 @@ class HttpAppSpec extends AnyFunSuite with BeforeAndAfterAll {
     assert(get("/add?a=x&b=3").statusCode() == 400)
   }
 
+  test("dashboard page returns HTML with a Dashboard header") {
+    val res = get("/dashboard")
+    assert(res.statusCode() == 200)
+    assert(res.headers().firstValue("Content-Type").orElse("").startsWith("text/html"))
+    assert(res.body().contains("<h1>Dashboard</h1>"))
+  }
+
   test("unknown path returns 404") {
     assert(get("/nope").statusCode() == 404)
   }
